@@ -1,2 +1,3 @@
 include ':app', ':food', ':travel', ':arouterlib'
 rootProject.name='RouterDemo'
+include ':libtsmerge'

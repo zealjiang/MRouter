@@ -3,6 +3,7 @@ package com.example.arouterlib;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Intent;
+import android.util.Log;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,11 +42,13 @@ public class Router {
     private static Map<String,Class<? extends Activity>> routerMap = new HashMap<>();
 
     public void register(String path,Class<? extends Activity> cls){
+        Log.d("mtest","register path= "+path+" cls= "+cls);
         routerMap.put(path,cls);
     }
 
     public void startActivity(Activity activity,String path){
         Class<? extends Activity> cls = routerMap.get(path);
+        Log.d("mtest","startActivity path= "+path+" cls= "+cls);
         if(cls != null){
             Intent intent = new Intent(activity,cls);
             activity.startActivity(intent);
