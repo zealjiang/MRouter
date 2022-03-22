@@ -3,7 +3,6 @@ package com.example.libtsmerge;
 import com.example.libtsmerge.util.FileUtil;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -16,9 +15,7 @@ public class M4sMerge {
         final M4sMerge m4sMerge = new M4sMerge();
 /*        m4sMerge.findFileId(DIR+"c_315122287");
         m4sMerge.findFileIdByJsonParse(DIR+"c_315122287");*/
-
         m4sMerge.mergeM4sVideoAudioArrays();
-
     }
 
     private void mergeM4sVideoAudioArrays(){
@@ -64,14 +61,11 @@ public class M4sMerge {
         }catch (Exception e){
             e.printStackTrace();
         }
-
-
     }
 
     private void mergeByFfmpeg(String fileDir,String name){
         //String cmd = "ffmpeg -i /Users/zealjiang/Desktop/array_m4s/c_315122287/80/video.m4s -i /Users/zealjiang/Desktop/array_m4s/c_315122287/80/audio.m4s -codec copy /Users/zealjiang/Desktop/array_m4s/c_315122287/80/xxx1.mp4";
         String cmd = "ffmpeg -i "+fileDir+"/80/video.m4s -i "+fileDir+"/80/audio.m4s -codec copy "+DIR+name+".mp4";
-
         try{
             Process p = Runtime.getRuntime().exec(cmd);
 
@@ -89,6 +83,12 @@ public class M4sMerge {
         }
     }
 
+    /**
+     * 使用从文件中查找id和name的方式执行的时间在2ms左右，而使用gson的方式解析却花费了200ms左右，
+     * 明显文件查找的文件要快，所以选择了使用文件中查找关键字的方式获取文件的id和name
+     * @param dir
+     * @return
+     */
     private String findFileIdAndTitle(String dir){
         long startT = System.currentTimeMillis();
         if(dir == null || dir.length() <= 0){

@@ -1,5 +1,6 @@
 package com.example.libtsmerge;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,14 +14,42 @@ import java.util.Collections;
 import java.util.Comparator;
 
 public class TsMerge {
+
+    private final String PATH_PREFIX = "/Users/zealjiang/Desktop/ts/";
+    private final String DIR = "/Users/zealjiang/Desktop/ts_array/";
+
     public static void main(String[] args) {
-        System.out.println("-----ddd----");
+        System.out.println("-----tsMerge start----");
         TsMerge tsMerge = new TsMerge();
         //tsMerge.writeToFileWithM3u8();
         //tsMerge.traverseDirAndWriteToFile();
+        tsMerge.mergeTsArrayDirs();
     }
 
-    private final String PATH_PREFIX = "/Users/zealjiang/Desktop/ts/";
+    private void mergeTsArrayDirs(){
+        try{
+            File dir = new File(DIR);
+            if(dir == null){
+                System.out.println("file "+DIR+" don't exist");
+                return;
+            }
+            File[] fileArray = dir.listFiles();
+            if(fileArray == null || fileArray.length <= 0){
+                System.out.println("fileArray is empty");
+                return;
+            }
+            int i = 0;
+            for (File file : fileArray) {
+                if(file == null){
+                    continue;
+                }
+                traverseDirAndWriteToFile(file.getAbsolutePath(),i);
+                i++;
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
 
     private void writeToFileWithM3u8() {
         File readFile = new File("/Users/zealjiang/Desktop/ts/offline.m3u8");
@@ -76,8 +105,13 @@ public class TsMerge {
         return part;
     }
 
-    private void traverseDirAndWriteToFile() {
-        File fileDir = new File("/Users/zealjiang/Desktop/ts");
+    private void traverseDirAndWriteToFile(String tsDir,int index) {
+        System.out.println("-----traverseDirAndWriteToFile tsDir ="+tsDir);
+        if(!tsDir.endsWith(".hls")){
+            System.out.println("-----traverseDirAndWriteToFile tsDir is not hls return "+tsDir);
+            return;
+        }
+        File fileDir = new File(tsDir);//"/Users/zealjiang/Desktop/ts");
         File[] dirs = fileDir.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
@@ -104,15 +138,16 @@ public class TsMerge {
         //if(true)return;
 
         FileWriter fw = null;
+        File fileTxt = null;
         try {
-            File file = new File(PATH_PREFIX,"file.txt");
-            if (file.exists()) {
-                file.delete();
+            fileTxt = new File(tsDir,"file.txt");
+            if (fileTxt.exists()) {
+                fileTxt.delete();
             }
-            if (!file.exists()) {
-                file.createNewFile();
+            if (!fileTxt.exists()) {
+                fileTxt.createNewFile();
             }
-            fw = new FileWriter(file);
+            fw = new FileWriter(fileTxt);
 
             for (int i = 0; i < dirs.length; i++) {
                 File dir = dirs[i];
@@ -147,8 +182,29 @@ public class TsMerge {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            if(fileTxt == null)return;
+            tsConcatToMp4ByFfmpeg(fileTxt.getAbsolutePath(),index+"_a");
+        }
+    }
 
-            runCommandTsConcatToMp4();
+    private void tsConcatToMp4ByFfmpeg(String fileTxtPath,String name){
+        System.out.println("tsConcatToMp4ByFfmpeg fileTxtPath = " + fileTxtPath);
+        //String cmd = "ffmpeg -f concat -safe 0 -i D:\新建文件夹\file.txt -c copy D:\新建文件夹\out.mp4";        String cmd = "ffmpeg -i "+fileDir+"/80/video.m4s -i "+fileDir+"/80/audio.m4s -codec copy "+DIR+name+".mp4";
+        String cmd = "ffmpeg -f concat -safe 0 -i "+fileTxtPath+" -c copy "+DIR+name+".mp4";
+        try{
+            Process p = Runtime.getRuntime().exec(cmd);
+
+            BufferedInputStream in = new BufferedInputStream(p.getErrorStream());//ffmpeg输入日志的类型是error，所以这里使用p.getErrorStream()
+            BufferedReader  inBr = new BufferedReader(new InputStreamReader(in));
+            String lineStr;
+            System.out.println("start---");
+            while ((lineStr = inBr.readLine()) != null){
+                System.out.println(lineStr);
+            }
+            inBr.close();
+            in.close();
+        }catch (Exception e){
+            e.printStackTrace();
         }
     }
 
