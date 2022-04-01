@@ -47,25 +47,32 @@ public class M4sMerge {
                 System.out.println("fileArray is empty");
                 return;
             }
+
             for (File file : fileArray) {
                 if(file == null){
                     continue;
                 }
-                String idAndTitle = findFileIdAndTitle(file.getAbsolutePath());
-                if(idAndTitle == null && idAndTitle.length() <= 1){
+                String idAndTitleAndDirName = findFileIdAndTitleAndDirName(file.getAbsolutePath());
+                System.out.println("idAndTitleAndDirName ="+idAndTitleAndDirName);
+                if(idAndTitleAndDirName == null || idAndTitleAndDirName.length() <= 1){
                     System.out.println("can't get file id and name file ="+file.getAbsolutePath());
                     continue;
                 }
-                mergeByFfmpeg(file.getAbsolutePath(),idAndTitle);
+                String[] titleAndDir = idAndTitleAndDirName.split("\\|");
+                if(!new File(DIR,titleAndDir[1]).exists()){
+                    new File(DIR,titleAndDir[1]).mkdir();
+                }
+                System.out.println("idAndTitleAndDirName ="+idAndTitleAndDirName+"  titleAndDir[0] ="+titleAndDir[0]+"  titleAndDir[1] ="+titleAndDir[1]);
+                mergeByFfmpeg(file.getAbsolutePath(),titleAndDir[0],titleAndDir[1]);
             }
         }catch (Exception e){
             e.printStackTrace();
         }
     }
 
-    private void mergeByFfmpeg(String fileDir,String name){
+    private void mergeByFfmpeg(String fileDir,String name,String outDirName){
         //String cmd = "ffmpeg -i /Users/zealjiang/Desktop/array_m4s/c_315122287/80/video.m4s -i /Users/zealjiang/Desktop/array_m4s/c_315122287/80/audio.m4s -codec copy /Users/zealjiang/Desktop/array_m4s/c_315122287/80/xxx1.mp4";
-        String cmd = "ffmpeg -i "+fileDir+"/80/video.m4s -i "+fileDir+"/80/audio.m4s -codec copy "+DIR+name+".mp4";
+        String cmd = "ffmpeg -i "+fileDir+"/80/video.m4s -i "+fileDir+"/80/audio.m4s -codec copy "+DIR+outDirName+"/"+name+".mp4";
         try{
             Process p = Runtime.getRuntime().exec(cmd);
 
@@ -89,7 +96,7 @@ public class M4sMerge {
      * @param dir
      * @return
      */
-    private String findFileIdAndTitle(String dir){
+    private String findFileIdAndTitleAndDirName(String dir){
         long startT = System.currentTimeMillis();
         if(dir == null || dir.length() <= 0){
             System.out.println("findFileId error dir is null");
@@ -97,12 +104,27 @@ public class M4sMerge {
         File readFile = new File(dir,"entry.json");
         String data = FileUtil.readFile(readFile);
         if(data != null && data.length() > 0){
-            int start = data.indexOf("\"page\"");
+            //获取title做为文件夹的名称
+            int start = data.indexOf("\"title\"");
+            if(start == -1){
+                System.out.println("findFile title start fail");
+                return "";
+            }
+            int end = data.indexOf(",",start);
+            if(end == -1){
+                System.out.println("findFile title end fail");
+                return "";
+            }
+
+            String dirName = data.substring(start+"\"title\"".length()+2,end-1);
+            System.out.println("findFile dirName ="+dirName);
+
+            start = data.indexOf("\"page\"",end);
             if(start == -1){
                 System.out.println("findFileId page start fail");
                 return "";
             }
-            int end = data.indexOf(",",start);
+            end = data.indexOf(",",start);
             if(end == -1){
                 System.out.println("findFileId page end fail");
                 return "";
@@ -112,17 +134,23 @@ public class M4sMerge {
             System.out.println("id ="+id);
             System.out.println("time_id ="+(System.currentTimeMillis() - startT));
 
-            String title = findFileTitle(data);
-
-            return title;//id+"_"+title;
+            String title = findFileTitle(data,end);
+            //文件名称中不能有空格
+            title = title.replace(' ','_');
+            System.out.println("title.charAt(0) ="+(title.charAt(0)) +" 0="+('0')+"  9 ="+('9'));
+            if(title.charAt(0) < '0' || title.charAt(0) > '9'){
+                return id+"_"+title+"|"+dirName;
+            }else {
+                return title+"|"+dirName;
+            }
         }
         return "";
     }
 
-    private String findFileTitle(String data){
+    private String findFileTitle(String data,int fromIndex){
         long startT = System.currentTimeMillis();
         if(data != null && data.length() > 0){
-            int start = data.indexOf("\"part\"");
+            int start = data.indexOf("\"part\"",fromIndex);
             if(start == -1){
                 System.out.println("findFileId page start fail");
                 return "";
