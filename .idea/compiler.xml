@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel target="1.7">
+      <module name="RouterDemo.app" target="1.8" />
+      <module name="RouterDemo.arouterlib" target="1.8" />
+      <module name="RouterDemo.common" target="1.8" />
+      <module name="RouterDemo.food" target="1.8" />
+      <module name="RouterDemo.libthread" target="1.8" />
+      <module name="RouterDemo.libthread.main" target="1.8" />
+      <module name="RouterDemo.libthread.test" target="1.8" />
+      <module name="RouterDemo.travel" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

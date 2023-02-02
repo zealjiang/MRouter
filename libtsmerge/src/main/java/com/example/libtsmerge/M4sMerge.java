@@ -10,7 +10,7 @@ import java.io.InputStreamReader;
 
 
 public class M4sMerge {
-    final static String DIR = "/Users/zealjiang/Desktop/array_m4s/";
+    final static String DIR = "/Users/zealjiang/Desktop/array_m4s/";//"/Users/zealjiang/Desktop/bilibli视频/Android_ts/884746024/";//"/Users/zealjiang/Desktop/array_m4s/";
     public static void main(String[] args) {
         final M4sMerge m4sMerge = new M4sMerge();
 /*        m4sMerge.findFileId(DIR+"c_315122287");
@@ -52,6 +52,10 @@ public class M4sMerge {
                 if(file == null){
                     continue;
                 }
+                System.out.println("file ="+file.getAbsolutePath());
+                if (file.getName().endsWith(".DS_Store")) {
+                    continue;
+                }
                 String idAndTitleAndDirName = findFileIdAndTitleAndDirName(file.getAbsolutePath());
                 System.out.println("idAndTitleAndDirName ="+idAndTitleAndDirName);
                 if(idAndTitleAndDirName == null || idAndTitleAndDirName.length() <= 1){
@@ -59,11 +63,17 @@ public class M4sMerge {
                     continue;
                 }
                 String[] titleAndDir = idAndTitleAndDirName.split("\\|");
-                if(!new File(DIR,titleAndDir[1]).exists()){
-                    new File(DIR,titleAndDir[1]).mkdir();
+                //文件夹中不能有空格
+                String targetDir = titleAndDir[1];
+                if (targetDir.contains(" ")) {
+                    targetDir = targetDir.replaceAll(" ", "");
                 }
-                System.out.println("idAndTitleAndDirName ="+idAndTitleAndDirName+"  titleAndDir[0] ="+titleAndDir[0]+"  titleAndDir[1] ="+titleAndDir[1]);
-                mergeByFfmpeg(file.getAbsolutePath(),titleAndDir[0],titleAndDir[1]);
+                System.out.println("去掉空格的 targetDir ="+targetDir);
+                if(!new File(DIR,targetDir).exists()){
+                    new File(DIR,targetDir).mkdir();
+                }
+                System.out.println("idAndTitleAndDirName ="+idAndTitleAndDirName+"  titleAndDir[0] ="+titleAndDir[0]+"  targetDir ="+targetDir);
+                mergeByFfmpeg(file.getAbsolutePath(),titleAndDir[0],targetDir);
             }
         }catch (Exception e){
             e.printStackTrace();
@@ -71,6 +81,7 @@ public class M4sMerge {
     }
 
     private void mergeByFfmpeg(String fileDir,String name,String outDirName){
+        System.out.println("mergeByFfmpeg fileDir ="+fileDir+" name ="+name+"  outDirName ="+outDirName);
         //String cmd = "ffmpeg -i /Users/zealjiang/Desktop/array_m4s/c_315122287/80/video.m4s -i /Users/zealjiang/Desktop/array_m4s/c_315122287/80/audio.m4s -codec copy /Users/zealjiang/Desktop/array_m4s/c_315122287/80/xxx1.mp4";
         String cmd = "ffmpeg -i "+fileDir+"/80/video.m4s -i "+fileDir+"/80/audio.m4s -codec copy "+DIR+outDirName+"/"+name+".mp4";
         try{
@@ -132,11 +143,12 @@ public class M4sMerge {
 
             String id = data.substring(start+"\"page\"".length()+1,end);
             System.out.println("id ="+id);
-            System.out.println("time_id ="+(System.currentTimeMillis() - startT));
+            System.out.println("use time ="+(System.currentTimeMillis() - startT));
 
             String title = findFileTitle(data,end);
             //文件名称中不能有空格
-            title = title.replace(' ','_');
+            title = title.replaceAll(" ","");
+            System.out.println("去掉空格的title ="+title);
             System.out.println("title.charAt(0) ="+(title.charAt(0)) +" 0="+('0')+"  9 ="+('9'));
             if(title.charAt(0) < '0' || title.charAt(0) > '9'){
                 return id+"_"+title+"|"+dirName;

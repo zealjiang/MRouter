@@ -15,10 +15,14 @@ import java.util.Comparator;
 public class TsMerge {
 
     private final String PATH_PREFIX = "/Users/zealjiang/Desktop/ts/";
-    private final String DIR = "/Users/zealjiang/Desktop/ts_array/";
+    private final String DIR = "/Users/zealjiang/Desktop/array_ts/";
+    //private final String DIR = "/Users/zealjiang/Desktop/ffmpeg/";
+    //private final String DIR = "/Users/zealjiang/Downloads/ffmpeg/";
+    private final String FILE_NAME_PREFIX = "春风又绿江南岸";
 
     public static void main(String[] args) {
         System.out.println("-----tsMerge start----");
+        System.out.println("cur dir ="+System.getProperty("user.dir"));
         TsMerge tsMerge = new TsMerge();
         //tsMerge.writeToFileWithM3u8();
         //tsMerge.traverseDirAndWriteToFile();
@@ -28,11 +32,13 @@ public class TsMerge {
     private void mergeTsArrayDirs(){
         try{
             File dir = new File(DIR);
-            if(dir == null){
+            if(dir == null || !dir.isDirectory()){
                 System.out.println("file "+DIR+" don't exist");
                 return;
             }
             File[] fileArray = dir.listFiles();
+            System.out.println("dir "+dir+"  fileArray ="+fileArray);
+            System.out.println("dir.exists() "+dir.exists()+"  fileArray ="+dir.listFiles());
             if(fileArray == null || fileArray.length <= 0){
                 System.out.println("fileArray is empty");
                 return;
@@ -165,7 +171,7 @@ public class TsMerge {
                     for (int j = 0; j < tsFiles.length; j++) {
                         File tsFile = tsFiles[j];
                         String path = tsFile.getAbsolutePath();
-                        System.out.println("path = " + path);
+                        //System.out.println("path = " + path);
 
                         fw.write("file '" + path + "'\n");
                         fw.flush();
@@ -182,7 +188,7 @@ public class TsMerge {
                 e.printStackTrace();
             }
             if(fileTxt == null)return;
-            tsConcatToMp4ByFfmpeg(fileTxt.getAbsolutePath(),index+"_a");
+            tsConcatToMp4ByFfmpeg(fileTxt.getAbsolutePath(),FILE_NAME_PREFIX+"_"+index);
         }
     }
 

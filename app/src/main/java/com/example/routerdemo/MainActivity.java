@@ -2,6 +2,7 @@ package com.example.routerdemo;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.ArrayMap;
 import android.util.Log;
@@ -16,6 +17,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        startActivity(new Intent(this,TintColorPngActivity.class));
 
         Button btnSkip = findViewById(R.id.btnSkip);
         btnSkip.setOnClickListener(new View.OnClickListener() {
