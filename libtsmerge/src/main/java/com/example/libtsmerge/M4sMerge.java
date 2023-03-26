@@ -8,9 +8,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 
+import javax.security.auth.login.CredentialNotFoundException;
+
 
 public class M4sMerge {
-    final static String DIR = "/Users/zealjiang/Desktop/array_m4s/";//"/Users/zealjiang/Desktop/bilibli视频/Android_ts/884746024/";//"/Users/zealjiang/Desktop/array_m4s/";
+    final static String DIR_GROUPS = "/Users/zealjiang/android_source/test/Android_ts/";
+    final static String DIR = "/Users/zealjiang/android_source/test/50355776/";//"/Users/zealjiang/Desktop/array_m4s/";//"/Users/zealjiang/Desktop/bilibli视频/Android_ts/884746024/";//"/Users/zealjiang/Desktop/array_m4s/";
     public static void main(String[] args) {
         final M4sMerge m4sMerge = new M4sMerge();
 /*        m4sMerge.findFileId(DIR+"c_315122287");
@@ -18,13 +21,15 @@ public class M4sMerge {
         m4sMerge.mergeM4sVideoAudioArrays();
     }
 
+
     private void mergeM4sVideoAudioArrays(){
         try{
             System.out.println("main start ----------");
             Thread t = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    doMergeM4s();
+                    //doMergeM4s(DIR);
+                    doMergeM4sAllGroups();
                 }
             });
             t.start();
@@ -35,16 +40,40 @@ public class M4sMerge {
         }
     }
 
-    private void doMergeM4s(){
+    private void doMergeM4sAllGroups(){
         try{
-            File dir = new File(DIR);
-            if(dir == null){
-                System.out.println("file "+DIR+" don't exist");
+            File dirGroups = new File(DIR_GROUPS);
+            File[] groupArray = dirGroups.listFiles();
+            if(groupArray == null || groupArray.length <= 0){
+                System.out.println("doMergeM4sAllGroups groupArray is empty dir ="+dirGroups);
                 return;
             }
+
+            for (File file : groupArray) {
+                if(file == null){
+                    continue;
+                }
+                System.out.println("group ="+file.getAbsolutePath());
+                if (file.getName().endsWith(".DS_Store")) {
+                    continue;
+                }
+                doMergeM4s(file.getAbsolutePath());
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private void doMergeM4s(String groupDir){
+        try{
+            System.out.println("doMergeM4s groupDir ="+groupDir);
+            if (groupDir == null || groupDir.length() <= 0) {
+                groupDir = DIR;
+            }
+            File dir = new File(groupDir);
             File[] fileArray = dir.listFiles();
             if(fileArray == null || fileArray.length <= 0){
-                System.out.println("fileArray is empty");
+                System.out.println("fileArray is empty dir ="+dir);
                 return;
             }
 
@@ -56,34 +85,43 @@ public class M4sMerge {
                 if (file.getName().endsWith(".DS_Store")) {
                     continue;
                 }
-                String idAndTitleAndDirName = findFileIdAndTitleAndDirName(file.getAbsolutePath());
-                System.out.println("idAndTitleAndDirName ="+idAndTitleAndDirName);
-                if(idAndTitleAndDirName == null || idAndTitleAndDirName.length() <= 1){
+                NameEntry nameEntry = findEntrNames(file.getAbsolutePath());
+                System.out.println("nameEntry ="+nameEntry);
+                if(nameEntry == null){
                     System.out.println("can't get file id and name file ="+file.getAbsolutePath());
                     continue;
                 }
-                String[] titleAndDir = idAndTitleAndDirName.split("\\|");
+
                 //文件夹中不能有空格
-                String targetDir = titleAndDir[1];
-                if (targetDir.contains(" ")) {
-                    targetDir = targetDir.replaceAll(" ", "");
+                String videoGroupName = nameEntry.videoGroupName;//【博毅创为】【layaAir开发教程】【游戏开发】由浅入深，菜鸟也能做游戏【layaAir】
+                if (videoGroupName.contains(" ")) {
+                    videoGroupName = videoGroupName.replaceAll(" ", "");
                 }
-                System.out.println("去掉空格的 targetDir ="+targetDir);
-                if(!new File(DIR,targetDir).exists()){
-                    new File(DIR,targetDir).mkdir();
+                if (videoGroupName.contains("【")) {
+                    videoGroupName = videoGroupName.replaceAll("【", "");
                 }
-                System.out.println("idAndTitleAndDirName ="+idAndTitleAndDirName+"  titleAndDir[0] ="+titleAndDir[0]+"  targetDir ="+targetDir);
-                mergeByFfmpeg(file.getAbsolutePath(),titleAndDir[0],targetDir);
+                if (videoGroupName.contains("】")) {
+                    videoGroupName = videoGroupName.replaceAll("】", "-");
+                }
+                System.out.println("去掉空格的 videoGroupName ="+videoGroupName);
+                if(!new File(DIR_GROUPS,videoGroupName).exists()){
+                    new File(DIR_GROUPS,videoGroupName).mkdirs();
+                }
+                String videoName = nameEntry.videoName;
+                String videoId = nameEntry.videoId;
+                String m4sDirName = nameEntry.m4sDirName;
+                System.out.println("nameEntry videoGroupName ="+videoGroupName+"  videoName ="+videoName+"  videoId ="+videoId+" m4sDirName ="+m4sDirName);
+                mergeByFfmpeg(file.getAbsolutePath(), videoName, videoGroupName, m4sDirName);
             }
         }catch (Exception e){
             e.printStackTrace();
         }
     }
 
-    private void mergeByFfmpeg(String fileDir,String name,String outDirName){
+    private void mergeByFfmpeg(String fileDir,String name,String outDirName, String m4sDirName){
         System.out.println("mergeByFfmpeg fileDir ="+fileDir+" name ="+name+"  outDirName ="+outDirName);
         //String cmd = "ffmpeg -i /Users/zealjiang/Desktop/array_m4s/c_315122287/80/video.m4s -i /Users/zealjiang/Desktop/array_m4s/c_315122287/80/audio.m4s -codec copy /Users/zealjiang/Desktop/array_m4s/c_315122287/80/xxx1.mp4";
-        String cmd = "ffmpeg -i "+fileDir+"/80/video.m4s -i "+fileDir+"/80/audio.m4s -codec copy "+DIR+outDirName+"/"+name+".mp4";
+        String cmd = "ffmpeg -i "+fileDir+"/"+m4sDirName+"/video.m4s -i "+fileDir+"/"+m4sDirName+"/audio.m4s -codec copy "+DIR+outDirName+"/"+name+".mp4";
         try{
             Process p = Runtime.getRuntime().exec(cmd);
 
@@ -107,10 +145,12 @@ public class M4sMerge {
      * @param dir
      * @return
      */
-    private String findFileIdAndTitleAndDirName(String dir){
+    private NameEntry findEntrNames(String dir){
         long startT = System.currentTimeMillis();
+        System.out.println("findEntrNames dir ="+dir);
+        NameEntry nameEntry = new NameEntry();
         if(dir == null || dir.length() <= 0){
-            System.out.println("findFileId error dir is null");
+            System.out.println("findEntrNames error dir is null");
         }
         File readFile = new File(dir,"entry.json");
         String data = FileUtil.readFile(readFile);
@@ -119,42 +159,67 @@ public class M4sMerge {
             int start = data.indexOf("\"title\"");
             if(start == -1){
                 System.out.println("findFile title start fail");
-                return "";
+                return null;
             }
             int end = data.indexOf(",",start);
             if(end == -1){
                 System.out.println("findFile title end fail");
-                return "";
+                return null;
             }
 
             String dirName = data.substring(start+"\"title\"".length()+2,end-1);
-            System.out.println("findFile dirName ="+dirName);
+            //文件名称中不能有空格
+            dirName = dirName.replaceAll(" ","");
+            System.out.println("findFile 去掉空格的dirName ="+dirName);
+            nameEntry.videoGroupName = dirName;
+
+            //获取m4s文件所在的文件夹名称
+            String typeTag = findM4sDirName(data, start);
+            nameEntry.m4sDirName = typeTag;
 
             start = data.indexOf("\"page\"",end);
             if(start == -1){
                 System.out.println("findFileId page start fail");
-                return "";
+                return null;
             }
             end = data.indexOf(",",start);
             if(end == -1){
                 System.out.println("findFileId page end fail");
-                return "";
+                return null;
             }
 
             String id = data.substring(start+"\"page\"".length()+1,end);
             System.out.println("id ="+id);
             System.out.println("use time ="+(System.currentTimeMillis() - startT));
+            nameEntry.videoId = id;
 
             String title = findFileTitle(data,end);
             //文件名称中不能有空格
             title = title.replaceAll(" ","");
             System.out.println("去掉空格的title ="+title);
             System.out.println("title.charAt(0) ="+(title.charAt(0)) +" 0="+('0')+"  9 ="+('9'));
-            if(title.charAt(0) < '0' || title.charAt(0) > '9'){
-                return id+"_"+title+"|"+dirName;
-            }else {
-                return title+"|"+dirName;
+            nameEntry.videoName = title;
+            return nameEntry;
+        }
+        return null;
+    }
+
+    private String findM4sDirName(String data,int fromIndex) {
+        if(data != null && data.length() > 0){
+            int start = data.indexOf("\"type_tag\"",fromIndex);
+            if(start == -1){
+                System.out.println("findFileId page start fail");
+                return "";
             }
+            int end = data.indexOf(",",start);
+            if(end == -1){
+                System.out.println("findFileId page end fail");
+                return "";
+            }
+
+            String typeTag = data.substring(start+"\"type_tag\"".length()+2,end-1);
+            System.out.println("typeTag ="+typeTag);
+            return typeTag;
         }
         return "";
     }
@@ -209,5 +274,12 @@ public class M4sMerge {
             @SerializedName("part")
             public String name;
         }
+    }
+
+    class NameEntry{
+        public String videoId;
+        public String videoGroupName;
+        public String videoName;
+        public String m4sDirName;
     }
 }
